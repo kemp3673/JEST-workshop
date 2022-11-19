@@ -2,27 +2,34 @@ const express = require('express');
 const bodyParser = require('body-parser');
 const cors = require('cors');
 const morgan = require('morgan');
-const routes = require('./routes/index.js');
+const routes = require('./routes/index');
 
-const app = express();
+const initializeApp = () => {
+  const app = express();
 
-// add other middleware
-app.use(cors());
-app.use(morgan('dev'));
+  // add other middleware
+  app.use(cors());
+  app.use(morgan('dev'));
+  app.use(bodyParser());
 
-// parse application/x-www-form-urlencoded
-app.use(express.urlencoded({ extended: false }));
+  // parse application/x-www-form-urlencoded
+  app.use(express.urlencoded({ extended: false }));
 
-// parse application/json
-app.use(express.json());
+  // parse application/json
+  app.use(express.json());
 
-app.use('/', routes);
+  app.use('/', routes);
 
-const config = {
-  port: process.env.PORT || 8080,
+  const config = {
+    port: process.env.PORT || 8080,
+  };
+
+  app.listen(config.port, () => {
+    // eslint-disable-next-line no-console
+    console.log('Express server listening on port', config.port);
+  });
+  return app;
 };
 
-app.listen(config.port, () => {
-  // eslint-disable-next-line no-console
-  console.log('Express server listening on port', config.port);
-});
+const app = initializeApp();
+module.exports = app;
