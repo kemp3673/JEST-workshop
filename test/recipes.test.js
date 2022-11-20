@@ -1,20 +1,22 @@
-const request = require("supertest");
-const bcrypt = require("bcrypt");
-const app = require("../index");
-const User = require("../database/models/users");
-const mongoose = require("../database/dbConection");
+/* eslint-disable no-underscore-dangle */
+/* eslint-disable no-undef */
+const request = require('supertest');
+const bcrypt = require('bcrypt');
+const app = require('../index');
+const User = require('../database/models/users');
+const mongoose = require('../database/dbConection');
 const UserService = require('../database/services/users');
 const RecipesService = require('../database/services/recipes');
 
 let id;
 let token;
 
-describe("TEST RECIPES API", () => {
+describe('TEST RECIPES API', () => {
   beforeAll(async () => {
     // Create test user
-    const password = bcrypt.hashSync("okay", 10);
+    const password = bcrypt.hashSync('okay', 10);
     await User.create({
-      username: "admin",
+      username: 'admin',
       password,
     });
   });
@@ -23,14 +25,14 @@ describe("TEST RECIPES API", () => {
     mongoose.disconnect();
   });
   // Test Login
-  describe("POST/login", () => {
-    it("Authenticates user and signs in", async () => {
+  describe('POST/login', () => {
+    it('Authenticates user and signs in', async () => {
       // DATA YOU WANT TO SAVE TO DB
       const user = {
-        username: "admin",
-        password: "okay",
+        username: 'admin',
+        password: 'okay',
       };
-      const res = await request(app).post("/login").send(user);
+      const res = await request(app).post('/login').send(user);
       token = res.body.accessToken;
       expect(res.statusCode).toEqual(200);
       expect(res.body).toEqual(
@@ -41,12 +43,12 @@ describe("TEST RECIPES API", () => {
             id: res.body.data.id,
             username: res.body.data.username,
           }),
-        })
+        }),
       );
     });
-    it("Does not sign in, password field empty", async () => {
+    it('Does not sign in, password field empty', async () => {
       // DATA YOU WANT TO SAVE TO DB
-      const user = { username: "admin" };
+      const user = { username: 'admin' };
       const res = await request(app).post('/login').send(user);
       expect(res.statusCode).toEqual(400);
       expect(res.body).toEqual(
@@ -56,9 +58,9 @@ describe("TEST RECIPES API", () => {
         }),
       );
     });
-    it("does not sign in, username field empty", async () => {
+    it('does not sign in, username field empty', async () => {
       // DATA YOU WANT TO SAVE TO DB
-      const user = { password: "okay" };
+      const user = { password: 'okay' };
       const res = await request(app).post('/login').send(user);
       expect(res.statusCode).toEqual(400);
       expect(res.body).toEqual(
@@ -68,11 +70,11 @@ describe("TEST RECIPES API", () => {
         }),
       );
     });
-    it("Does not sign in, username does not exist", async () => {
+    it('Does not sign in, username does not exist', async () => {
       // DATA YOU WANT TO SAVE TO DB
       const user = {
         username: 'chii',
-        password: "okay",
+        password: 'okay',
       };
       const res = await request(app).post('/login').send(user);
       expect(res.statusCode).toEqual(400);
@@ -83,11 +85,11 @@ describe("TEST RECIPES API", () => {
         }),
       );
     });
-    it("Does not sign in, password incorrect", async () => {
+    it('Does not sign in, password incorrect', async () => {
       // DATA YOU WANT TO SAVE TO DB
       const user = {
         username: 'admin',
-        password: "wrong",
+        password: 'wrong',
       };
       const res = await request(app).post('/login').send(user);
       expect(res.statusCode).toEqual(400);
@@ -102,10 +104,10 @@ describe("TEST RECIPES API", () => {
       // DATA YOU WANT TO SAVE TO DB
       const user = {
         username: 'admin',
-        password: "okay",
+        password: 'okay',
       };
       jest.spyOn(UserService, 'findByUsername').mockRejectedValueOnce(new Error());
-      const res = await request(app).post("/login").send(user);
+      const res = await request(app).post('/login').send(user);
       expect(res.statusCode).toEqual(500);
       expect(res.body).toEqual(
         expect.objectContaining({
@@ -233,7 +235,7 @@ describe("TEST RECIPES API", () => {
         vegetarian: true,
       };
       jest.spyOn(RecipesService, 'saveRecipes').mockRejectedValueOnce(new Error());
-      const res = await request(app).post("/recipes").send(recipe).set('Authorization', `Bearer ${token}`);;
+      const res = await request(app).post('/recipes').send(recipe).set('Authorization', `Bearer ${token}`);
       expect(res.statusCode).toEqual(500);
       expect(res.body).toEqual(
         expect.objectContaining({
@@ -279,7 +281,7 @@ describe("TEST RECIPES API", () => {
       );
     });
     it('Does not retrieve when id is invalid', async () => {
-      const res = await request(app).get(`/recipes/abc123`);
+      const res = await request(app).get('/recipes/abc123');
       expect(res.statusCode).toEqual(400);
       expect(res.body).toEqual(
         expect.objectContaining({
@@ -305,21 +307,21 @@ describe("TEST RECIPES API", () => {
     it('Updates recipe record in db', async () => {
       // DATA YOU WANT TO UPDATE
       const recipe = {
-        name : 'chicken nuggets',
+        name: 'chicken nuggets',
       };
       const res = await request(app).patch(`/recipes/${id}`).send(recipe).set('Authorization', `Bearer ${token}`);
       expect(res.statusCode).toEqual(200);
       expect(res.body).toEqual(
         expect.objectContaining({
           success: true,
-          data: expect.any(Object)
+          data: expect.any(Object),
         }),
       );
-    })
+    });
     it('Does not update, invalid difficulty value', async () => {
       // DATA YOU WANT TO UPDATE
       const recipe = {
-        name : 'jollof rice',
+        name: 'jollof rice',
         difficulty: '2',
       };
       const res = await request(app).patch(`/recipes/${id}`).send(recipe).set('Authorization', `Bearer ${token}`);
@@ -367,7 +369,7 @@ describe("TEST RECIPES API", () => {
         difficulty: 3,
         vegetarian: true,
       };
-      const res = await request(app).patch(`/recipes/${id}`).send(recipe).set('Authorization', `Bearer 132456`);
+      const res = await request(app).patch(`/recipes/${id}`).send(recipe).set('Authorization', 'Bearer 132456');
       expect(res.statusCode).toEqual(403);
       expect(res.body).toEqual(
         expect.objectContaining({
@@ -389,7 +391,7 @@ describe("TEST RECIPES API", () => {
     it('Does not update, internal server error', async () => {
       // DATA YOU WANT TO UPDATE
       const recipe = {
-        name : 'chicken nuggets',
+        name: 'chicken nuggets',
       };
       jest.spyOn(RecipesService, 'fetchByIdAndUpdate').mockRejectedValueOnce(new Error());
       const res = await request(app).patch(`/recipes/${id}`).send(recipe).set('Authorization', `Bearer ${token}`);
@@ -400,7 +402,7 @@ describe("TEST RECIPES API", () => {
           message: 'An error occured while updating recipe',
         }),
       );
-    })
+    });
   });
   // TEST DELETE ENDPOINT
   describe('DELETE/recipes/:id', () => {
