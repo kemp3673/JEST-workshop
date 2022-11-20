@@ -20,14 +20,13 @@ const initializeApp = () => {
 
   app.use('/', routes);
 
-  const config = {
-    port: process.env.PORT || 8080,
-  };
-
-  app.listen(config.port, () => {
-    // eslint-disable-next-line no-console
-    console.log('Express server listening on port', config.port);
-  });
+  // const config = {
+  //   port: process.env.PORT || 8080,
+  // };
+  // app.listen(config.port, () => {
+  //   // eslint-disable-next-line no-console
+  //   console.log('Express server listening on port', config.port);
+  // });
   return app;
 };
 
