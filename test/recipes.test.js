@@ -3,6 +3,8 @@ const bcrypt = require("bcrypt");
 const app = require("../index");
 const User = require("../database/models/users");
 const mongoose = require("../database/dbConection");
+const UserService = require('../database/services/users');
+const RecipesService = require('../database/services/recipes');
 
 let id;
 let token;
@@ -93,6 +95,22 @@ describe("TEST RECIPES API", () => {
         expect.objectContaining({
           success: false,
           message: 'Incorrect username or password',
+        }),
+      );
+    });
+    it('Does not sign in, internal server error', async () => {
+      // DATA YOU WANT TO SAVE TO DB
+      const user = {
+        username: 'admin',
+        password: "okay",
+      };
+      jest.spyOn(UserService, 'findByUsername').mockRejectedValueOnce(new Error());
+      const res = await request(app).post("/login").send(user);
+      expect(res.statusCode).toEqual(500);
+      expect(res.body).toEqual(
+        expect.objectContaining({
+          success: false,
+          message: 'login failed.',
         }),
       );
     });
@@ -207,6 +225,23 @@ describe("TEST RECIPES API", () => {
         }),
       );
     });
+    it('Does not save, internal server error', async () => {
+      // DATA YOU WANT TO SAVE TO DB
+      const recipe = {
+        name: 'chicken nuggets',
+        difficulty: 2,
+        vegetarian: true,
+      };
+      jest.spyOn(RecipesService, 'saveRecipes').mockRejectedValueOnce(new Error());
+      const res = await request(app).post("/recipes").send(recipe).set('Authorization', `Bearer ${token}`);;
+      expect(res.statusCode).toEqual(500);
+      expect(res.body).toEqual(
+        expect.objectContaining({
+          success: false,
+          message: 'Failed to save recipes!',
+        }),
+      );
+    });
   });
   // Get recipes
   describe('GET/recipes', () => {
@@ -217,6 +252,17 @@ describe("TEST RECIPES API", () => {
         expect.objectContaining({
           success: true,
           data: expect.any(Object),
+        }),
+      );
+    });
+    it('Does not retrieve all recipes, internal server error', async () => {
+      jest.spyOn(RecipesService, 'allRecipes').mockRejectedValueOnce(new Error());
+      const res = await request(app).get('/recipes').set('Authorization', `Bearer ${token}`);
+      expect(res.statusCode).toEqual(500);
+      expect(res.body).toEqual(
+        expect.objectContaining({
+          success: false,
+          message: 'Some error occurred while retrieving recipes.',
         }),
       );
     });
@@ -239,6 +285,17 @@ describe("TEST RECIPES API", () => {
         expect.objectContaining({
           success: false,
           message: 'Recipe with id abc123 does not exist',
+        }),
+      );
+    });
+    it('Does not retrieves a specified entry in db, internal server error', async () => {
+      jest.spyOn(RecipesService, 'fetchById').mockRejectedValueOnce(new Error());
+      const res = await request(app).get(`/recipes/${id}`);
+      expect(res.statusCode).toEqual(500);
+      expect(res.body).toEqual(
+        expect.objectContaining({
+          success: false,
+          message: 'Some error occurred while retrieving recipe details.',
         }),
       );
     });
@@ -315,6 +372,65 @@ describe("TEST RECIPES API", () => {
       expect(res.body).toEqual(
         expect.objectContaining({
           message: 'Unauthorized',
+        }),
+      );
+    });
+    it('Should not update recipe in db, no update passed', async () => {
+      const recipe = {};
+      const res = await request(app).patch(`/recipes/${id}`).send(recipe).set('Authorization', `Bearer ${token}`);
+      expect(res.statusCode).toEqual(400);
+      expect(res.body).toEqual(
+        expect.objectContaining({
+          success: false,
+          message: 'field should not be empty',
+        }),
+      );
+    });
+    it('Does not update, internal server error', async () => {
+      // DATA YOU WANT TO UPDATE
+      const recipe = {
+        name : 'chicken nuggets',
+      };
+      jest.spyOn(RecipesService, 'fetchByIdAndUpdate').mockRejectedValueOnce(new Error());
+      const res = await request(app).patch(`/recipes/${id}`).send(recipe).set('Authorization', `Bearer ${token}`);
+      expect(res.statusCode).toEqual(500);
+      expect(res.body).toEqual(
+        expect.objectContaining({
+          success: false,
+          message: 'An error occured while updating recipe',
+        }),
+      );
+    })
+  });
+  // TEST DELETE ENDPOINT
+  describe('DELETE/recipes/:id', () => {
+    it('Should DELETE recipe with valid id', async () => {
+      const res = await request(app).delete(`/recipes/${id}`).set('Authorization', `Bearer ${token}`);
+      expect(res.statusCode).toEqual(200);
+      expect(res.body).toEqual(
+        expect.objectContaining({
+          success: true,
+          message: 'Recipe successfully deleted',
+        }),
+      );
+    });
+    it('Should not DELETE with invalid token', async () => {
+      const res = await request(app).delete(`/recipes/${id}`).set('Authorization', 'Bearer 123abc');
+      expect(res.statusCode).toEqual(403);
+      expect(res.body).toEqual(
+        expect.objectContaining({
+          message: 'Unauthorized',
+        }),
+      );
+    });
+    it('Should not DELETE, internal server error', async () => {
+      jest.spyOn(RecipesService, 'fetchByIdAndDelete').mockRejectedValueOnce(new Error());
+      const res = await request(app).delete(`/recipes/${id}`).set('Authorization', `Bearer ${token}`);
+      expect(res.statusCode).toEqual(500);
+      expect(res.body).toEqual(
+        expect.objectContaining({
+          success: false,
+          message: 'An error occured while deleting recipe',
         }),
       );
     });
